@@ -245,22 +245,20 @@ body {
     border-radius: 50%;
     background: radial-gradient(
         circle at 28% 28%,
-        rgba(255, 255, 255, 0.88),
-        rgba(255, 252, 248, 0.38) 40%,
-        rgba(248, 252, 255, 0.18) 70%,
-        rgba(255, 255, 255, 0.04)
+        rgba(255, 220, 235, 0.85),
+        rgba(255, 182, 193, 0.55) 35%,
+        rgba(255, 160, 180, 0.35) 65%,
+        rgba(219, 112, 147, 0.2)
     );
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 182, 193, 0.7);
     box-shadow:
-        inset -2px -2px 8px rgba(255, 255, 255, 0.65),
-        inset 3px 3px 10px rgba(255, 253, 250, 0.45),
-        0 0 18px rgba(255, 252, 248, 0.28);
-    opacity: 0.58;
+        inset -2px -2px 8px rgba(255, 200, 220, 0.5),
+        inset 3px 3px 10px rgba(255, 182, 193, 0.4),
+        0 0 18px rgba(255, 182, 193, 0.35);
+    opacity: 0.72;
     will-change: transform;
     transform: translate3d(0, 0, 0);
-    /* 确保不受其他 transition 影响 */
     transition: none !important;
-    /* 独立合成层 */
     isolation: isolate;
 }
 

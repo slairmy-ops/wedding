@@ -12,7 +12,7 @@ const AUTO_ADVANCE_MS = 6500;
 let autoTimer = null;
 
 let musicList = [];
-let currentBackgroundEffect = 'B'; // 'A', 'B', 'C'
+let currentBackgroundEffect = 'C'; // 'A', 'B', 'C'
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -20,7 +20,7 @@ async function init() {
     slideTrack = document.getElementById('slide-track');
     initBackgroundEffect();
     createRoseRain();
-    //createWaterSurfaceBubbles();
+    createWaterSurfaceBubbles();
     startBackgroundMusic();
     await loadPhotos();
 
@@ -84,9 +84,9 @@ function initBackgroundEffect() {
     lightSpots.className = 'light-spots';
     container.appendChild(lightSpots);
     
-    // 初始化效果B（直接设置，不切换）
-    currentBackgroundEffect = 'B';
-    container.className = 'background-effect effect-B';
+    // 默认效果 C：渐变+光斑
+    currentBackgroundEffect = 'C';
+    container.className = 'background-effect effect-C';
     createLightSpots();
 }
 
@@ -138,11 +138,64 @@ function createLightSpots() {
     }
 }
 
+/** 获取当前幻灯片中照片区域的排除矩形（视口坐标，含外边距），水泡不能进入这些区域 */
+function getPhotoExclusionRects(padding) {
+    const active = document.querySelector('.slide.active');
+    if (!active) return [];
+    const pad = padding != null ? padding : 20;
+    const rects = [];
+    active.querySelectorAll('.photo-container').forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+            rects.push({
+                left: r.left - pad,
+                top: r.top - pad,
+                right: r.right + pad,
+                bottom: r.bottom + pad
+            });
+        }
+    });
+    return rects;
+}
+
+/** 若水泡中心在某个排除矩形内，则推出到最近边并反弹速度，返回是否发生碰撞 */
+function bounceBubbleOutOfPhoto(bubble, rects) {
+    const cx = bubble.x + bubble.size / 2;
+    const cy = bubble.y + bubble.size / 2;
+    for (const r of rects) {
+        if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) {
+            const dl = cx - r.left, dr = r.right - cx, dt = cy - r.top, db = r.bottom - cy;
+            const minDist = Math.min(dl, dr, dt, db);
+            if (minDist === dl) {
+                bubble.x = r.left - bubble.size;
+                bubble.vx = Math.abs(bubble.vx) * (0.6 + Math.random() * 0.4);
+                bubble.vy = (Math.random() - 0.5) * 4;
+            } else if (minDist === dr) {
+                bubble.x = r.right;
+                bubble.vx = -Math.abs(bubble.vx) * (0.6 + Math.random() * 0.4);
+                bubble.vy = (Math.random() - 0.5) * 4;
+            } else if (minDist === dt) {
+                bubble.y = r.top - bubble.size;
+                bubble.vy = Math.abs(bubble.vy) * (0.6 + Math.random() * 0.4);
+                bubble.vx = (Math.random() - 0.5) * 4;
+            } else {
+                bubble.y = r.bottom;
+                bubble.vy = -Math.abs(bubble.vy) * (0.6 + Math.random() * 0.4);
+                bubble.vx = (Math.random() - 0.5) * 4;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 function createWaterSurfaceBubbles() {
     const container = document.getElementById('water-surface');
     if (!container) return;
+    container.innerHTML = '';
     const count = 32;
     const bubbles = [];
+    const exclusionPadding = 24; // 水泡与照片边缘的最小间距
     
     for (let i = 0; i < count; i++) {
         const bubble = document.createElement('div');
@@ -155,8 +208,8 @@ function createWaterSurfaceBubbles() {
             element: bubble,
             x: Math.random() * (window.innerWidth - size),
             y: Math.random() * (window.innerHeight - size),
-            vx: (Math.random() - 0.5) * 2.5 + (Math.random() > 0.5 ? 1 : -1) * 0.5,
-            vy: (Math.random() - 0.5) * 2.0 + (Math.random() > 0.5 ? 1 : -1) * 0.5,
+            vx: (Math.random() - 0.5) * 5.5 + (Math.random() > 0.5 ? 1 : -1) * 1.2,
+            vy: (Math.random() - 0.5) * 4.5 + (Math.random() > 0.5 ? 1 : -1) * 1,
             size: size
         };
         
@@ -177,10 +230,9 @@ function createWaterSurfaceBubbles() {
         const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
         
-        // 使用固定时间步长确保动画流畅，即使帧率波动也不受影响
         const timeStep = Math.min(deltaTime / 16, 2);
+        const exclusionRects = getPhotoExclusionRects(exclusionPadding);
         
-        // 批量更新所有水泡位置，减少重排
         bubbles.forEach(bubble => {
             bubble.x += bubble.vx * timeStep;
             bubble.y += bubble.vy * timeStep;
@@ -191,35 +243,38 @@ function createWaterSurfaceBubbles() {
             if (bubble.x <= 0) {
                 bubble.x = 0;
                 bubble.vx = Math.abs(bubble.vx) * (0.6 + Math.random() * 0.4);
-                bubble.vy = (Math.random() - 0.5) * 2.5;
+                bubble.vy = (Math.random() - 0.5) * 5;
             } else if (bubble.x >= maxX) {
                 bubble.x = maxX;
                 bubble.vx = -Math.abs(bubble.vx) * (0.6 + Math.random() * 0.4);
-                bubble.vy = (Math.random() - 0.5) * 2.5;
+                bubble.vy = (Math.random() - 0.5) * 5;
             }
             
             if (bubble.y <= 0) {
                 bubble.y = 0;
                 bubble.vy = Math.abs(bubble.vy) * (0.6 + Math.random() * 0.4);
-                bubble.vx = (Math.random() - 0.5) * 2.5;
+                bubble.vx = (Math.random() - 0.5) * 5;
             } else if (bubble.y >= maxY) {
                 bubble.y = maxY;
                 bubble.vy = -Math.abs(bubble.vy) * (0.6 + Math.random() * 0.4);
-                bubble.vx = (Math.random() - 0.5) * 2.5;
+                bubble.vx = (Math.random() - 0.5) * 5;
             }
             
-            // 直接设置 transform，不使用 transition，确保立即更新
+            // 水泡不能进入照片区域：碰到照片边缘则推出并反弹（每帧最多处理几次，防止卡在夹角）
+            if (exclusionRects.length > 0) {
+                for (let b = 0; b < 5; b++) {
+                    if (!bounceBubbleOutOfPhoto(bubble, exclusionRects)) break;
+                }
+            }
+            
             bubble.element.style.transform = `translate3d(${bubble.x}px, ${bubble.y}px, 0)`;
         });
         
-        // 确保动画循环持续运行，即使其他操作阻塞也不会停止
         animationId = requestAnimationFrame(animateBubbles);
     }
     
-    // 立即启动动画，不等待其他操作
     animationId = requestAnimationFrame(animateBubbles);
     
-    // 确保动画在页面可见时继续运行
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && !isRunning) {
             lastTime = performance.now();
