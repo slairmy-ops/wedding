@@ -8,9 +8,7 @@
     "start": "node server.js",
     "dev": "node server.js",
     "pack": "pkg . --targets node18-macos-x64 --output dist/wedding-photo-gallery-macos",
-    "pack:win": "pkg . --targets node18-win-x64 --output dist/wedding-photo-gallery-win.exe",
-    "pack:win-portable": "node scripts/build-win-portable.js",
-    "pack:full": "npm run pack && node scripts/build-portable.js"
+    "pack:win": "pkg . --targets node18-win-x64 --output dist/wedding-photo-gallery-win.exe"
   },
   "pkg": {
     "assets": ["public/**/*"],

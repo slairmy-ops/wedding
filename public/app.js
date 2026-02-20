@@ -20,7 +20,7 @@ async function init() {
     slideTrack = document.getElementById('slide-track');
     initBackgroundEffect();
     createRoseRain();
-    createWaterSurfaceBubbles();
+    // createWaterSurfaceBubbles();
     startBackgroundMusic();
     await loadPhotos();
 
@@ -195,7 +195,6 @@ function createWaterSurfaceBubbles() {
     container.innerHTML = '';
     const count = 32;
     const bubbles = [];
-    const exclusionPadding = 24; // 水泡与照片边缘的最小间距
     
     for (let i = 0; i < count; i++) {
         const bubble = document.createElement('div');
@@ -231,7 +230,6 @@ function createWaterSurfaceBubbles() {
         lastTime = currentTime;
         
         const timeStep = Math.min(deltaTime / 16, 2);
-        const exclusionRects = getPhotoExclusionRects(exclusionPadding);
         
         bubbles.forEach(bubble => {
             bubble.x += bubble.vx * timeStep;
@@ -260,13 +258,7 @@ function createWaterSurfaceBubbles() {
                 bubble.vx = (Math.random() - 0.5) * 5;
             }
             
-            // 水泡不能进入照片区域：碰到照片边缘则推出并反弹（每帧最多处理几次，防止卡在夹角）
-            if (exclusionRects.length > 0) {
-                for (let b = 0; b < 5; b++) {
-                    if (!bounceBubbleOutOfPhoto(bubble, exclusionRects)) break;
-                }
-            }
-            
+            // 水泡在照片底下移动：不限制区域，仅通过 z-index 被照片遮挡
             bubble.element.style.transform = `translate3d(${bubble.x}px, ${bubble.y}px, 0)`;
         });
         
